@@ -5,55 +5,60 @@ namespace App\Controller;
 use App\Service\ProductService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Controller\Annotations as Rest;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProductsController extends AbstractFOSRestController
 {
+    private  $productService;
+
+    public function __construct(ProductService $productService)
+    {
+        $this->productService = $productService;
+    }
+
     /**
-     * @param ProductService $productService
      * @return Response
      *
      * @Rest\Get("/products")
      */
-    public function findAllAction(ProductService $productService): Response
+    public function findAllAction(): Response
     {
-        $product = $productService->getProductRepository()->getAll();
-        $view = $this->view($product, 200);
+        $products = $this->productService->getProductRepository()->getAll();
+        $view = $this->view($products, Response::HTTP_OK);
 
         return $this->handleView($view);
     }
 
     /**
      * @param int $productId
-     * @param ProductService $productService
      * @return Response
      * @throws \Exception
      *
      * @Rest\Get("/products/{productId}")
      */
-    public function findByIdAction(int $productId, ProductService $productService): Response
+    public function findByIdAction(int $productId): JsonResponse
     {
-        $product = $productService->getProductRepository()->getById($productId);
-        $view = $this->view($product, 200);
+        $product = $this->productService->getProductRepository()->getById($productId);
+        $view = $this->view($product, Response::HTTP_OK);
 
-        return $this->handleView($view);
+        return $this->json($product);
     }
 
     /**
      * @param Request $request
-     * @param ProductService $productService
      * @return Response
      * @throws \Exception
      *
      * @Rest\Post("/products")
      */
-    public function newAction(Request $request, ProductService $productService): Response
+    public function newAction(Request $request): Response
     {
         $requestJson = json_decode($request->getContent(), true);
-        $product = $productService->addProduct($requestJson);
+        $product = $this->productService->addProduct($requestJson);
 
-        $view = $this->view($product, 200);
+        $view = $this->view($product, Response::HTTP_CREATED);
 
         return $this->handleView($view);
     }
@@ -61,37 +66,33 @@ class ProductsController extends AbstractFOSRestController
     /**
      * @param int $productId
      * @param Request $request
-     * @param ProductService $productService
      * @return Response
      * @throws \Exception
      *
      * @Rest\Put("/products/{productId}")
      */
-    public function updateByIdAction(int $productId, Request $request, ProductService $productService): Response
+    public function updateByIdAction(int $productId, Request $request): Response
     {
         $requestJson = json_decode($request->getContent(), true);
-        $productService->updateProduct($productId, $requestJson);
-        $product = $productService->getProductRepository()->getById($productId);
-        $updatedProduct = $productService->updateProduct($product);
-        $view = $this->view($updatedProduct, 200);
+        $updatedProduct = $this->productService->updateProduct($productId, $requestJson);
+        $view = $this->view($updatedProduct, Response::HTTP_OK);
 
         return $this->handleView($view);
     }
 
     /**
      * @param $productId
-     * @param ProductService $productService
      * @return Response
      *
      * @Rest\Delete("/products/{productId}")
      */
-    public function deleteByIdAction($productId, ProductService $productService): Response
+    public function deleteByIdAction($productId): Response
     {
         try {
-            $productService->getProductRepository()->deleteById($productId);
-            $view = $this->view(true, 200);
+            $this->productService->getProductRepository()->deleteById($productId);
+            $view = $this->view(true, Response::HTTP_NO_CONTENT);
         } catch (\Throwable $e) {
-            $view = $this->view(false, 200);
+            $view = $this->view(false, Response::HTTP_GONE);
         }
 
         return $this->handleView($view);
