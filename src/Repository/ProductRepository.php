@@ -28,6 +28,11 @@ class ProductRepository
         return $this->buildArray($statement->fetchAllAssociative());
     }
 
+    /**
+     * @param int $productId
+     * @return Product|mixed
+     * @throws \Exception
+     */
     public function getById(int $productId)
     {
         $query = 'SELECT * FROM product WHERE id_product = :id_product';
@@ -48,6 +53,11 @@ class ProductRepository
         return $products[0];
     }
 
+    /**
+     * @param Product $product
+     * @return string
+     * @throws \Exception
+     */
     public function add(Product $product): string
     {
         $query =
@@ -76,6 +86,10 @@ class ProductRepository
         return $this->connection->lastInsertId();
     }
 
+    /**
+     * @param Product $product
+     * @throws \Exception
+     */
     public function update(Product $product)
     {
         $query =
@@ -106,6 +120,10 @@ class ProductRepository
         }
     }
 
+    /**
+     * @param int $productId
+     * @throws \Exception
+     */
     public function deleteById(int $productId)
     {
         $query = 'DELETE FROM product WHERE id_product = :id_product';
