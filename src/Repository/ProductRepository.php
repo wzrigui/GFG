@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repository;
 
 use App\Entity\Product;
@@ -17,11 +18,13 @@ class ProductRepository
     }
 
     /**
+     * @param  $sortingField
      * @return Product[]
      */
-    public function getAll()
+    public function getAll($sortingField)
     {
-        $query = 'SELECT * FROM product ORDER BY product.id_product';
+        $sortingField = $sortingField ? $sortingField : 'product.id_product';
+        $query = 'SELECT * FROM product  ORDER BY ' . $sortingField;
         $statement = $this->connection->prepare($query);
         $statement->execute();
 
@@ -152,14 +155,13 @@ class ProductRepository
     private function buildArray(array $statementResults): array
     {
         return array_map(
-            fn($result) =>
-                new Product(
-                    $result['uuid'],
-                    $result['name'],
-                    $result['brand'],
-                    $result['stock'],
-                    $result['id_product']
-                ),
+            fn ($result) => new Product(
+                $result['uuid'],
+                $result['name'],
+                $result['brand'],
+                $result['stock'],
+                $result['id_product']
+            ),
             $statementResults
         );
     }

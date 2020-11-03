@@ -6,21 +6,24 @@ namespace App\Service;
 
 use App\Entity\Product;
 use App\Mail\EmailProvider;
+use App\Mail\SendingProviderInterface;
 use App\Repository\ProductRepository;
+use Hateoas\Representation\CollectionRepresentation;
+use Hateoas\Representation\PaginatedRepresentation;
 use Ramsey\Uuid\Uuid;
 
 class ProductService
 {
-    /** @var ProductRepository  */
+    /** @var ProductRepository */
     protected $productRepository;
 
     /** @var EmailProvider */
-    protected $emailProvider;
+    protected $sendingProvider;
 
-    public function __construct(ProductRepository $productRepository, EmailProvider $emailProvider)
+    public function __construct(ProductRepository $productRepository, SendingProviderInterface $sendingProvider)
     {
         $this->productRepository = $productRepository;
-        $this->emailProvider = $emailProvider;
+        $this->sendingProvider = $sendingProvider;
     }
 
     /**
@@ -45,13 +48,14 @@ class ProductService
     }
 
     /**
-     * @param Product $product
+     * @param  $productId
      * @param array $requestJson
      * @return Product
      * @throws \Exception
      */
-    public function updateProduct(Product $product, $requestJson): Product
+    public function updateProduct($productId, $requestJson): Product
     {
+        $product = $this->productRepository->getById($productId);
         $updatedProduct = new Product(
             $product->getUuid(),
             $requestJson['name'] ?? $product->getName(),
@@ -61,19 +65,51 @@ class ProductService
         );
         $this->productRepository->update($updatedProduct);
         if ($product->getStock() !== $updatedProduct->getStock()) {
-            $this->sendUpdatedProductMail($product,$updatedProduct);
+            $this->sendUpdatedProductMail($product, $updatedProduct);
         }
 
         return $updatedProduct;
     }
-    private function sendUpdatedProductMail(Product $product,Product $updatedProduct)
+
+    private function sendUpdatedProductMail(Product $product, Product $updatedProduct)
     {
-        $this->emailProvider->sendStockChangedEmail(
+        $this->sendingProvider->sendStockChanged(
             $product->getName(),
             $product->getStock(),
             $updatedProduct->getStock()
         );
 
+    }
+
+    /**
+     * @param $request
+     * @return Product[]|PaginatedRepresentation
+     */
+    public function getProducts($request)
+    {
+        $products = $this->productRepository->getAll($request->get('sort'));
+        $limit = $request->get('size', 0);
+        $page = $request->get('page', 1);
+        if ($limit) {
+            $offset = ($page - 1) * $limit;
+            $collection = new CollectionRepresentation(array_slice($products, $offset, $limit));
+            $numberOfPages = $limit ? (int)ceil(count($products) / $limit) : 1;
+
+            $products = new PaginatedRepresentation(
+                $collection,
+                'get_products',
+                array(),
+                $page,
+                $limit,
+                $numberOfPages,
+                'page',
+                'limit',
+                true,
+                count($products)
+            );
+        }
+
+        return $products;
     }
 
     /**

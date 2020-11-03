@@ -1,7 +1,7 @@
 <?php
 namespace App\Mail;
 
-class EmailProvider
+class EmailProvider implements SendingProviderInterface
 {
     const FROM_EMAIL = 'php.coding.challenge@global-fashion-group.com';
 
@@ -9,7 +9,7 @@ class EmailProvider
 
     const FILE_TO_LOG = '/tmp/email_log.txt';
 
-    public function sendStockChangedEmail(string $productName, int $previousStock, int $newStock)
+    public function sendStockChanged(string $productName, int $previousStock, int $newStock)
     {
         $subject = 'Stock updated';
 
@@ -20,10 +20,10 @@ class EmailProvider
             $newStock
         );
 
-        $this->sendMail(self::FROM_EMAIL, self::TO_EMAIL, $subject, $message);
+        $this->send(self::FROM_EMAIL, self::TO_EMAIL, $subject, $message);
     }
 
-    private function sendMail(string $from, string $to, string $subject, string $message)
+    private function send(string $from, string $to, string $subject, string $message)
     {
         $log = sprintf(
             "Email sent from %s to %s. Subject: %s; Message: %s\n",
