@@ -33,14 +33,15 @@ class ProductsController extends AbstractFOSRestController
 
     /**
      * @param int $productId
-     * @return Response
+     * @return JsonResponse
      * @throws \Exception
-     *
-     * @Rest\Get("/products/{productId}")
      */
     public function findByIdAction(int $productId): JsonResponse
     {
         $product = $this->productService->getProductRepository()->getById($productId);
+        if (!$product) {
+            return $this->json([], Response::HTTP_NOT_FOUND);
+        }
         $view = $this->view($product, Response::HTTP_OK);
 
         return $this->json($product);
