@@ -87,7 +87,13 @@ class ProductService
      */
     public function getProducts($request)
     {
-        $products = $this->productRepository->getAll($request->get('sort'));
+        $query = ['name' => ':name' ,'brand' => ':brand'];
+        $filter['execute'] = array_filter( [':name' => $request->get('name') ,':brand' => $request->get('brand')], 'strlen' );
+        //building where condition
+        $filter['query'] = array_intersect($query, array_keys($filter['execute']));
+        $filter['query'] = urldecode(http_build_query($filter['query'], ' ', ' AND '));
+
+        $products = $this->productRepository->getAll($request->get('sort'), $filter);
         $limit = $request->get('size', 0);
         $page = $request->get('page', 1);
         if ($limit) {

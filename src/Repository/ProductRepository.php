@@ -19,14 +19,16 @@ class ProductRepository
 
     /**
      * @param  $sortingField
+     * @param  $filter
      * @return Product[]
      */
-    public function getAll($sortingField)
+    public function getAll($sortingField, $filter)
     {
+        $condition = $filter['query'] ? $filter['query'] : 1;
         $sortingField = $sortingField ? $sortingField : 'product.id_product';
-        $query = 'SELECT * FROM product  ORDER BY ' . $sortingField;
+        $query = 'SELECT * FROM  product WHERE ' . $condition . ' ORDER BY ' . $sortingField;
         $statement = $this->connection->prepare($query);
-        $statement->execute();
+        $statement->execute($filter['execute']);
 
         return $this->buildArray($statement->fetchAllAssociative());
     }
