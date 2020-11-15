@@ -64,3 +64,30 @@ Response
 Send a `DELETE` request to `http://localhost:8080/products/1`
 
 If delete is successful `true` is returned in response, if failed then `false` is returned
+
+**Sorting&Pagination**
+
+The Request : `http://localhost:8080/products?size=2&page=0&sort=brand`
+Response
+ ```json
+"_links": {
+        "first": {
+            "href": "http://localhost:8080/products?page=0&size=2&sort=brand,asc"
+        },
+        "self": {
+            "href": "http://localhost:8080/products?page=0&size=2&sort=brand,asc"
+        },
+        "next": {
+            "href": "http://localhost:8080/products?page=1&size=2&sort=brand,asc"
+        },
+        "last": {
+            "href": "http://localhost:8080/products?page=1&size=2&sort=brand,asc"
+        }
+ },
+ "page": {
+    "size": 2,
+    "totalElements": 3,
+    "totalPages": 2,
+    "number": 0
+ }
+```
