@@ -1,12 +1,44 @@
 <?php
 namespace App\Entity;
 
+use JMS\Serializer\Annotation as Serializer;
+use Hateoas\Configuration\Annotation as Hateoas;
+
+/**
+ *
+ * @Hateoas\Relation(
+ *     "self",
+ *     attributes={"type": "GET"},
+ *     href = "expr('/products/' ~ object.getId())",
+ *     )
+ * @Hateoas\Relation(
+ *     "Create",
+ *     attributes={"type": "POST"},
+ *     href = "expr('/products')"
+ * )
+ * @Hateoas\Relation(
+ *     "Update",
+ *     attributes={"type": "PUT"},
+ *     href = "expr('/products/' ~ object.getId())"
+ * )
+ * @Hateoas\Relation(
+ *     "Delete",
+ *     attributes={"type": "DELETE"},
+ *     href = "expr('/products/' ~ object.getId())"
+ * )
+ */
 class Product
 {
-    /** @var int|null */
+    /**
+     *
+     * @var int|null
+     */
     private $id;
 
-    /** @var string */
+    /**
+     * @Serializer\Groups({"default"})
+     * @var string
+     */
     private $uuid;
 
     /** @var string */
@@ -17,6 +49,8 @@ class Product
 
     /** @var int */
     private $stock;
+
+
 
     public function __construct(
         string $uuid,
@@ -56,4 +90,5 @@ class Product
     {
         return $this->stock;
     }
+
 }

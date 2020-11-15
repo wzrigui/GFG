@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repository;
 
 use App\Entity\Product;
@@ -17,17 +18,26 @@ class ProductRepository
     }
 
     /**
+     * @param  $sortingField
+     * @param  $filter
      * @return Product[]
      */
-    public function getAll()
+    public function getAll($sortingField, $filter)
     {
-        $query = 'SELECT * FROM product ORDER BY product.id_product';
+        $condition = $filter['query'] ? $filter['query'] : 1;
+        $sortingField = $sortingField ? $sortingField : 'product.id_product';
+        $query = 'SELECT * FROM  product WHERE ' . $condition . ' ORDER BY ' . $sortingField;
         $statement = $this->connection->prepare($query);
-        $statement->execute();
+        $statement->execute($filter['execute']);
 
         return $this->buildArray($statement->fetchAllAssociative());
     }
 
+    /**
+     * @param int $productId
+     * @return Product|mixed
+     * @throws \Exception
+     */
     public function getById(int $productId)
     {
         $query = 'SELECT * FROM product WHERE id_product = :id_product';
@@ -48,6 +58,11 @@ class ProductRepository
         return $products[0];
     }
 
+    /**
+     * @param Product $product
+     * @return string
+     * @throws \Exception
+     */
     public function add(Product $product): string
     {
         $query =
@@ -76,6 +91,10 @@ class ProductRepository
         return $this->connection->lastInsertId();
     }
 
+    /**
+     * @param Product $product
+     * @throws \Exception
+     */
     public function update(Product $product)
     {
         $query =
@@ -106,6 +125,10 @@ class ProductRepository
         }
     }
 
+    /**
+     * @param int $productId
+     * @throws \Exception
+     */
     public function deleteById(int $productId)
     {
         $query = 'DELETE FROM product WHERE id_product = :id_product';
@@ -134,14 +157,13 @@ class ProductRepository
     private function buildArray(array $statementResults): array
     {
         return array_map(
-            fn($result) =>
-                new Product(
-                    $result['uuid'],
-                    $result['name'],
-                    $result['brand'],
-                    $result['stock'],
-                    $result['id_product']
-                ),
+            fn ($result) => new Product(
+                $result['uuid'],
+                $result['name'],
+                $result['brand'],
+                $result['stock'],
+                $result['id_product']
+            ),
             $statementResults
         );
     }

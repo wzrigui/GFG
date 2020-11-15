@@ -2,104 +2,108 @@
 
 namespace App\Controller;
 
-use App\Entity\Product;
-use App\Mail\EmailProvider;
-use App\Repository\ProductRepository;
+use App\Service\ProductService;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Controller\Annotations as Rest;
-use Ramsey\Uuid\Uuid;
+use Hateoas\HateoasBuilder;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProductsController extends AbstractFOSRestController
 {
-    /**
-     * @Rest\Post("/products/findAll")
-     */
-    public function findAllAction(ProductRepository $productRepository): Response
+    private $productService;
+
+    public function __construct(ProductService $productService)
     {
-        $product = $productRepository->getAll();
-        $view = $this->view($product, 200);
+        $this->productService = $productService;
+    }
+
+    /**
+     *
+     * @param Request $request
+     * @return Response
+     *
+     * @Rest\Get(
+     *     path="/products",
+     *     name="get_products",
+     * )
+     *
+     */
+    public function findAllAction(Request $request): Response
+    {
+        $products = $this->productService->getProducts($request);
+
+        $view = $this->view($products, Response::HTTP_OK);
 
         return $this->handleView($view);
     }
 
     /**
-     * @Rest\Post("/products/findById/{productId}")
+     * @param int $productId
+     * @return JsonResponse
+     * @throws \Exception
      */
-    public function findByIdAction(ProductRepository $productRepository, int $productId): Response
+    public function findByIdAction(int $productId): JsonResponse
     {
-        $product = $productRepository->getById($productId);
-        $view = $this->view($product, 200);
+        $hateoas = HateoasBuilder::create()->build();
 
-        return $this->handleView($view);
-    }
-
-    /**
-     * @Rest\Post("/products/new")
-     */
-    public function newAction(ProductRepository $productRepository, Request $request): Response
-    {
-        $requestJson = json_decode($request->getContent(), true);
-
-        $uuid = Uuid::uuid1(1)->toString();
-
-        $product = new Product(
-            $uuid,
-            $requestJson['name'],
-            $requestJson['brand'],
-            $requestJson['stock']
-        );
-
-        $productId = $productRepository->add($product);
-        $product = $productRepository->getById($productId);
-
-        $view = $this->view($product, 200);
-
-        return $this->handleView($view);
-    }
-
-    /**
-     * @Rest\Post("/products/updateById/{productId}")
-     */
-    public function updateByIdAction(ProductRepository $productRepository, Request $request, int $productId): Response
-    {
-        $requestJson = json_decode($request->getContent(), true);
-
-        $product = $productRepository->getById($productId);
-        $updatedProduct = new Product(
-            $product->getUuid(),
-            $requestJson['name'] ?? $product->getName(),
-            $requestJson['brand'] ?? $product->getBrand(),
-            $requestJson['stock'] ?? $product->getStock(),
-            $productId
-        );
-
-        $productRepository->update($updatedProduct);
-
-        if ($product->getStock() !== $updatedProduct->getStock()) {
-            (new EmailProvider())->sendStockChangedEmail(
-                $product->getName(),
-                $product->getStock(),
-                $updatedProduct->getStock()
-            );
+        $product = $this->productService->getProductRepository()->getById($productId);
+        $json = $hateoas->serialize($product, 'json');
+        $product = json_decode($json, true);
+        if (!$product) {
+            return $this->json([], Response::HTTP_NOT_FOUND);
         }
+        return $this->json($product, Response::HTTP_OK);
+    }
 
-        $view = $this->view($updatedProduct, 200);
+    /**
+     * @param Request $request
+     * @return Response
+     * @throws \Exception
+     *
+     * @Rest\Post("/products")
+     */
+    public function newAction(Request $request): Response
+    {
+        $requestJson = json_decode($request->getContent(), true);
+        $product = $this->productService->addProduct($requestJson);
+
+        $view = $this->view($product, Response::HTTP_CREATED);
 
         return $this->handleView($view);
     }
 
     /**
-     * @Rest\Post("/products/deleteById/{productId}")
+     * @param int $productId
+     * @param Request $request
+     * @return Response
+     * @throws \Exception
+     *
+     * @Rest\Put("/products/{productId}")
      */
-    public function deleteByIdAction(ProductRepository $productRepository, $productId): Response
+    public function updateByIdAction(int $productId, Request $request): Response
+    {
+        $requestJson = json_decode($request->getContent(), true);
+        $updatedProduct = $this->productService->updateProduct($productId, $requestJson);
+        $view = $this->view($updatedProduct, Response::HTTP_OK);
+
+        return $this->handleView($view);
+    }
+
+    /**
+     * @param $productId
+     * @return Response
+     *
+     * @Rest\Delete("/products/{productId}")
+     */
+    public function deleteByIdAction($productId): Response
     {
         try {
-            $productRepository->deleteById($productId);
-            $view = $this->view(true, 200);
+            $this->productService->getProductRepository()->deleteById($productId);
+            $view = $this->view(true, Response::HTTP_NO_CONTENT);
         } catch (\Throwable $e) {
-            $view = $this->view(false, 200);
+            $view = $this->view(false, Response::HTTP_GONE);
         }
 
         return $this->handleView($view);
