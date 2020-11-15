@@ -1,9 +1,4 @@
-## Local Setup
 
-Clone and open the project in your IDE.
-### Requirements
-1. Docker/Docker Compose
-2. Git client
 
 ### How to Run?
 
@@ -23,15 +18,15 @@ The Product Service is now ready to receive API requests.
 ## REST API Documentation for Products
 **_Find All Products_** 
 
-Send a `POST` Request to `http://localhost:8080/products/findAll`
+Send a `GET` Request to `http://localhost:8080/products`
 
 **_Find a Product with Id 1_**
 
-Send a `POST` Request to `http://localhost:8080/products/findById/1`
+Send a `GET` Request to `http://localhost:8080/products/1`
 
 **_Add New Product_**
 
-Send a `POST` request to `http://localhost:8080/products/new`
+Send a `POST` request to `http://localhost:8080/products`
 
 Sample Request Body
 ```json
@@ -44,7 +39,7 @@ Sample Request Body
 
 **_Update a Product with Id 1_**
 
-Send a `POST` request to `http://localhost:8080/products/updateById/1`
+Send a `PUT` request to `http://localhost:8080/products/1`
 
 Sample Request Body
 ```json
@@ -66,6 +61,6 @@ Response
 
 **_Delete a Product with Id 1_**
 
-Send a `POST` request to `http://localhost:8080/products/deleteById/1`
+Send a `DELETE` request to `http://localhost:8080/products/1`
 
 If delete is successful `true` is returned in response, if failed then `false` is returned
